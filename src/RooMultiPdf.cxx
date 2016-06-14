@@ -66,6 +66,32 @@ RooMultiPdf::RooMultiPdf(const RooMultiPdf& other, const char* name) :
   cFactor=other.cFactor; // correction to 2*NLL by default is -> 2*0.5 per param
 }
 
+//_____________________________________________________________________________
+void RooMultiPdf::addExtraPdfs(RooCategory& _x, const RooArgList& _c)  
+{
+  std::cout << "PRINTING whatever c is " << c << std::endl;
+  c.Print();
+  RooListProxy c2("_pdfs","has all the pdfs",this);
+  TIterator *pdfIter=_c.createIterator(); 
+  int count=nPdfs;
+  RooAbsPdf *fPdf;
+  while ( (fPdf = (RooAbsPdf*) pdfIter->Next()) ){
+	c.add(*fPdf);
+	// This is done by the user BUT is there a way to do it at construction?
+	_x.defineType(Form("_pdf%d",count),count);//(fPdf->getParameters())->getSize());
+	// Isn't there a better wat to hold on to these values?
+	RooConstVar *tmp = new RooConstVar(Form("const%s",fPdf->GetName()),"",fPdf->getVariables()->getSize());
+	corr.add(*tmp);
+	count++;
+  }
+  nPdfs=c2.getSize();
+  cFactor=0.5; // correction to 2*NLL by default is -> 2*0.5 per param
+ _oldIndex=fIndex;
+  c=c2; 
+  std::cout << "PRINTING whatever c is " << c << std::endl;
+  c.Print();
+}
+
 bool RooMultiPdf::checkIndexDirty() const {
   return _oldIndex!=x;  
 }

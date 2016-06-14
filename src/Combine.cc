@@ -665,7 +665,11 @@ void Combine::run(TString hlfFile, const std::string &dataset, double &limit, do
     unsigned int nLimits = 0;
     w->loadSnapshot("clean");
     RooDataSet *systDs = 0;
-    if (withSystematics && !toysNoSystematics_ && (readToysFromHere == 0)) {
+    //if (withSystematics && !toysNoSystematics_ && (readToysFromHere == 0)) {
+    RooArgSet allFloatingParameters = w->allVars();
+    allFloatingParameters.remove(*mc->GetParametersOfInterest());
+    int nFloatingNonPoiParameters = utils::countFloating(allFloatingParameters);
+    if (nFloatingNonPoiParameters && !toysNoSystematics_ && (readToysFromHere == 0)) {
       if (nuisances == 0) throw std::logic_error("Running with systematics enabled, but nuisances not defined.");
       nuisancePdf.reset(utils::makeNuisancePdf(expectSignal_ ? *mc : *mc_bonly));
       if (toysFrequentist_) {
@@ -707,17 +711,29 @@ void Combine::run(TString hlfFile, const std::string &dataset, double &limit, do
         }
 	std::cout << "Generate toy " << iToy << "/" << nToys << std::endl;
 	if (isExtended) {
+  std::cout << " DEBUG LC A" << std::endl;
           if (newGen_) {
+  std::cout << " DEBUG LC A1" << std::endl;
             absdata_toy = newToyMC.generate(weightVar_); // as simple as that
+            absdata_toy->Print();
           } else if (unbinned_) {
+  std::cout << " DEBUG LC A2" << std::endl;
     	      absdata_toy = genPdf->generate(*observables,RooFit::Extended());
+            absdata_toy->Print();
           } else if (generateBinnedWorkaround_) {
+  std::cout << " DEBUG LC A3" << std::endl;
               std::auto_ptr<RooDataSet> unbinn(genPdf->generate(*observables,RooFit::Extended()));
               absdata_toy = new RooDataHist("toy","binned toy", *observables, *unbinn);
+            absdata_toy->Print();
           } else {
+  std::cout << " DEBUG LC A4" << std::endl;
+            ((RooRealVar*) observables->find("mggEBEB"))->setBins(4000);
+            observables->find("mggEBEB")->Print("V");
     	      absdata_toy = genPdf->generateBinned(*observables,RooFit::Extended());
+            absdata_toy->Print();
           }
 	} else {
+  std::cout << " DEBUG LC B" << std::endl;
 	  RooDataSet *data_toy = genPdf->generate(*observables,1);
 	  absdata_toy = data_toy;
 	}

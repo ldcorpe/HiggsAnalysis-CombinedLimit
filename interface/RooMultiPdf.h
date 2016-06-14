@@ -39,6 +39,7 @@ public:
   RooMultiPdf(const RooMultiPdf& other, const char* name=0);
   virtual TObject* clone(const char* newname) const { return new RooMultiPdf(*this,newname); }
   inline virtual ~RooMultiPdf() { }
+  void addExtraPdfs (RooCategory& _x, const RooArgList& _c);
 
 /*
   RooAbsReal* createNLL(RooAbsData& data, const RooCmdArg& arg1=RooCmdArg::none(),  const RooCmdArg& arg2=RooCmdArg::none(),  

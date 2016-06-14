@@ -69,7 +69,7 @@ MaxLikelihoodFit::MaxLikelihoodFit() :
    ;
 
     // setup a few defaults
-    nToys=0; fitStatus_=0; mu_=0; muLoErr_=0; muHiErr_=0; numbadnll_=-1; nll_nll0_=-1; nll_bonly_=-1; nll_sb_=-1;
+    nToys=0; fitStatus_=0; mu_=0; muLoErr_=0; muHiErr_=0; muErr_=0 ; numbadnll_=-1; nll_nll0_=-1; nll_bonly_=-1; nll_sb_=-1;
 }
 
 MaxLikelihoodFit::~MaxLikelihoodFit(){
@@ -106,7 +106,6 @@ void MaxLikelihoodFit::applyOptions(const boost::program_options::variables_map 
 }
 
 bool MaxLikelihoodFit::runSpecific(RooWorkspace *w, RooStats::ModelConfig *mc_s, RooStats::ModelConfig *mc_b, RooAbsData &data, double &limit, double &limitErr, const double *hint) {
-
   if (reuseParams_ && minos_!="none"){
 	std::cout << "Cannot reuse b-only fit params when running minos. Parameters will be reset when running S+B fit"<<std::endl;
 	reuseParams_=false;
@@ -185,7 +184,10 @@ bool MaxLikelihoodFit::runSpecific(RooWorkspace *w, RooStats::ModelConfig *mc_s,
   r->setConstant(true);
 
   // Setup Nll before calling fits;
-  if (currentToy_<1) nll.reset(mc_s->GetPdf()->createNLL(data,constCmdArg_s,RooFit::Extended(mc_s->GetPdf()->canBeExtended())));
+  //nll->Print();
+  //if (currentToy_<1) nll.reset(mc_s->GetPdf()->createNLL(data,constCmdArg_s,RooFit::Extended(mc_s->GetPdf()->canBeExtended())));
+  if (!nll.get()) nll.reset(mc_s->GetPdf()->createNLL(data,constCmdArg_s,RooFit::Extended(mc_s->GetPdf()->canBeExtended())));
+  //nll.reset(mc_s->GetPdf()->createNLL(data,constCmdArg_s,RooFit::Extended(mc_s->GetPdf()->canBeExtended())));
   // Get the nll value on the prefit
   double nll0 = nll->getVal();
 
@@ -299,8 +301,10 @@ bool MaxLikelihoodFit::runSpecific(RooWorkspace *w, RooStats::ModelConfig *mc_s,
       if (makePlots_) {
           std::vector<RooPlot *> plots = utils::makePlots(*mc_s->GetPdf(), data, signalPdfNames_.c_str(), backgroundPdfNames_.c_str(), rebinFactor_);
           for (std::vector<RooPlot *>::iterator it = plots.begin(), ed = plots.end(); it != ed; ++it) {
-              c1->cd(); (*it)->Draw(); 
+              c1->cd(); c1->SetLogy();  (*it)->Draw(); 
               c1->Print((out_+"/"+(*it)->GetName()+"_fit_s.png").c_str());
+              c1->Print((out_+"/"+(*it)->GetName()+"_fit_s.pdf").c_str());
+              c1->Print((out_+"/"+(*it)->GetName()+"_fit_s.root").c_str());
               if (fitOut.get() && currentToy_< 1) fitOut->WriteTObject(*it, (std::string((*it)->GetName())+"_fit_s").c_str());
           }
       }
@@ -346,6 +350,7 @@ bool MaxLikelihoodFit::runSpecific(RooWorkspace *w, RooStats::ModelConfig *mc_s,
 
       muLoErr_=loErr;
       muHiErr_=hiErr;
+      muErr_  =rf->getError();
 
       double hiErr95 = +(do95_ && rf->hasRange("err95") ? rf->getMax("err95") - bestFitVal : 0);
       double loErr95 = -(do95_ && rf->hasRange("err95") ? rf->getMin("err95") - bestFitVal : 0);
@@ -371,6 +376,8 @@ bool MaxLikelihoodFit::runSpecific(RooWorkspace *w, RooStats::ModelConfig *mc_s,
   } else {
       std::cout << "\n --- MaxLikelihoodFit ---" << std::endl;
       std::cout << "Fit failed."  << std::endl;
+      fitStatus_ = -999;
+
   }
   if (t_fit_sb_) t_fit_sb_->Fill();
 
@@ -678,6 +685,9 @@ void MaxLikelihoodFit::createFitResultTrees(const RooStats::ModelConfig &mc, boo
 
 	 t_fit_b_->Branch("mu",&mu_,"mu/Double_t");
 	 t_fit_sb_->Branch("mu",&mu_,"mu/Double_t");
+	 
+   t_fit_b_->Branch("muErr",&muErr_,"muErr/Double_t");
+	 t_fit_sb_->Branch("muErr",&muErr_,"muErr/Double_t");
 
 	 t_fit_b_->Branch("muLoErr",&muLoErr_,"muLoErr/Double_t");
 	 t_fit_sb_->Branch("muLoErr",&muLoErr_,"muLoErr/Double_t");

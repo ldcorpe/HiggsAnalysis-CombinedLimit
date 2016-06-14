@@ -676,7 +676,8 @@ cacheutils::CachingAddNLL::evaluate() const
     if (!multiPdfs_.empty()) {
         double correctionFactor = 0;
         for (std::vector<std::pair<const RooMultiPdf*,CachingPdfBase*> >::iterator itp = multiPdfs_.begin(), edp = multiPdfs_.end(); itp != edp; ++itp) {
-            correctionFactor += itp->first->getCorrection();
+            //correctionFactor += itp->first->getCorrection();
+            correctionFactor += 2*itp->first->getCorrection();
         }
         // Add correction 
         ret+=correctionFactor;
