@@ -69,7 +69,7 @@ MaxLikelihoodFit::MaxLikelihoodFit() :
    ;
 
     // setup a few defaults
-    nToys=0; fitStatus_=0; mu_=0; muLoErr_=0; muHiErr_=0; muErr_=0 ; numbadnll_=-1; nll_nll0_=-1; nll_bonly_=-1; nll_sb_=-1;
+    nToys=0; fitStatus_=0; mu_=0; muLoErr_=0; muHiErr_=0; muErr_=0 ; numbadnll_=-1; nll_nll0_=-1; nll_bonly_=-1; nll_sb_=-1; nBkg_=0.;
 }
 
 MaxLikelihoodFit::~MaxLikelihoodFit(){
@@ -196,7 +196,11 @@ bool MaxLikelihoodFit::runSpecific(RooWorkspace *w, RooStats::ModelConfig *mc_s,
   } else if (minos_ != "all") {
     RooArgList minos; 
     res_b = doFit(*mc_s->GetPdf(), data, minos, constCmdArg_s, /*hesse=*/true,/*reuseNLL*/ true); 
-    nll_bonly_=nll->getVal()-nll0;   
+    nll_bonly_=nll->getVal()-nll0;
+    *mc_s->GetObservables()->Print()
+    exit(1);
+    setRange("window",1,2);
+    nBkg_ = *mc_s->GetPdf()->createIntegral(*mc_s->GetObservables(),NormSet(*mc_s->GetObservables()),Range("window"));
   } else {
     CloseCoutSentry sentry(verbose < 2);
     res_b = mc_s->GetPdf()->fitTo(data, 
@@ -683,7 +687,9 @@ void MaxLikelihoodFit::createFitResultTrees(const RooStats::ModelConfig &mc, boo
     	 t_fit_b_->Branch("fit_status",&fitStatus_,"fit_status/Int_t");
    	 t_fit_sb_->Branch("fit_status",&fitStatus_,"fit_status/Int_t");
 
-	 t_fit_b_->Branch("mu",&mu_,"mu/Double_t");
+	 t_fit_b_->Branch("nBkg",&nBkg_,"nBkg/Double_t");
+	 
+   t_fit_b_->Branch("mu",&mu_,"mu/Double_t");
 	 t_fit_sb_->Branch("mu",&mu_,"mu/Double_t");
 	 
    t_fit_b_->Branch("muErr",&muErr_,"muErr/Double_t");
